@@ -13,12 +13,12 @@ class AnimeWorld extends MProvider {
 
   @override
   Future<MPages> getPopular(int page) async {
-    return parseAnimeList('$baseUrl/filter?sort=6&page=$page');
+    return parseTops('$baseUrl/tops/ongoing');
   }
 
   @override
   Future<MPages> getLatestUpdates(int page) async {
-    return parseAnimeList('$baseUrl/filter?sort=1&page=$page');
+    return parseAnimeList('$baseUrl/updated?page=$page');
   }
 
   @override
@@ -131,10 +131,7 @@ class AnimeWorld extends MProvider {
     for (var element in document.select('div.film-list div.item')) {
       final anime = MManga();
       var name = cleanText(element.selectFirst('a.name')?.text ?? '');
-      final isDub = element.selectFirst('div.dub') != null;
-      if (isDub && !name.toUpperCase().contains('ITA')) {
-        name += ' (ITA)';
-      }
+
       anime.name = name;
       anime.imageUrl = absoluteUrl(
         element.selectFirst('img')?.attr('src') ?? '',
@@ -157,6 +154,26 @@ class AnimeWorld extends MProvider {
         ) ??
         currentPage;
     return MPages(animeList, currentPage < totalPage);
+  }
+
+  Future<MPages> parseTops(String url) async {
+    final res = (await client.get(Uri.parse(url))).body;
+    final document = parseHtml(res);
+    final animeList = <MManga>[];
+
+    for (var element in document.select('div.item.w-100')) {
+      final anime = MManga();
+      var name = cleanText(element.selectFirst('div.name.mb-2')?.text ?? '');
+      anime.name = name;
+      anime.imageUrl = absoluteUrl(
+        element.selectFirst('img.tops-thumbnail')?.attr('src') ?? '',
+      );
+      anime.link = element.selectFirst('a')?.attr('href') ?? '';
+      if (anime.name.isNotEmpty && anime.link.isNotEmpty) {
+        animeList.add(anime);
+      }
+    }
+    return MPages(animeList, false);
   }
 
   Future<List<MVideo>> getAnimeWorldVideos(

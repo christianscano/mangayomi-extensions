@@ -1,7 +1,7 @@
 import '../../../../../model/source.dart';
 
 Source get animeworld => _animeworld;
-const _animeworldVersion = '0.0.13';
+const _animeworldVersion = '0.0.14';
 const _animeworldCodeUrl =
     'https://raw.githubusercontent.com/christianscano/mangayomi-extensions/$branchName/dart/anime/src/it/animeworld/animeworld.dart';
 
