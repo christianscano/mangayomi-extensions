@@ -1,20 +1,22 @@
-const mangayomiSources = [{
-  "name": "Novel Updates",
-  "lang": "en",
-  "baseUrl": "https://www.novelupdates.com",
-  "apiUrl": "",
-  "iconUrl":
-    "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/en.novelupdates.png",
-  "typeSource": "single",
-  "itemType": 2,
-  "version": "0.0.5",
-  "dateFormat": "",
-  "dateFormatLocale": "",
-  "pkgPath": "novel/src/en/novelupdates.js",
-  "isNsfw": false,
-  "hasCloudflare": true,
-  "notes": "This extension requires you to login to view the chapters!"
-}];
+const mangayomiSources = [
+  {
+    name: "Novel Updates",
+    lang: "en",
+    baseUrl: "https://www.novelupdates.com",
+    apiUrl: "",
+    iconUrl:
+      "https://raw.githubusercontent.com/christianscano/mangayomi-extensions/main/javascript/icon/en.novelupdates.png",
+    typeSource: "single",
+    itemType: 2,
+    version: "0.0.5",
+    dateFormat: "",
+    dateFormatLocale: "",
+    pkgPath: "novel/src/en/novelupdates.js",
+    isNsfw: false,
+    hasCloudflare: true,
+    notes: "This extension requires you to login to view the chapters!",
+  },
+];
 
 class DefaultExtension extends MProvider {
   headers = {
@@ -59,7 +61,7 @@ class DefaultExtension extends MProvider {
   async getPopular(page) {
     const res = await new Client().get(
       `${this.source.baseUrl}/series-ranking/?rank=popmonth&pg=${page}`,
-      this.headers
+      this.headers,
     );
     return this.mangaListFromPage(res);
   }
@@ -67,7 +69,7 @@ class DefaultExtension extends MProvider {
   async getLatestUpdates(page) {
     const res = await new Client().get(
       `${this.source.baseUrl}/series-finder/?sf=1&sh=&sort=sdate&order=desc&pg=${page}`,
-      this.headers
+      this.headers,
     );
     return this.mangaListFromPage(res);
   }
@@ -80,25 +82,42 @@ class DefaultExtension extends MProvider {
       return this.mangaListFromPage(res);
     }
 
-    if (filters[0].state.filter(f => f.state == true).length > 0) {
-      const values = filters[0].state.filter(f => f.state == true).map(f => f.value).join(",");
+    if (filters[0].state.filter((f) => f.state == true).length > 0) {
+      const values = filters[0].state
+        .filter((f) => f.state == true)
+        .map((f) => f.value)
+        .join(",");
       url += `&nt=${values}`;
     }
 
-    if (filters[1].state.filter(f => f.state == true).length > 0) {
-      const values = filters[1].state.filter(f => f.state == true).map(f => f.value).join(",");
+    if (filters[1].state.filter((f) => f.state == true).length > 0) {
+      const values = filters[1].state
+        .filter((f) => f.state == true)
+        .map((f) => f.value)
+        .join(",");
       url += `&org=${values}`;
     }
 
-    if (filters[2].state.filter(f => f.state == 1 || f.state == 2).length > 0) {
-      const including = filters[2].state.filter(f => f.state == 1).map(f => f.value).join(",");
-      const excluding = filters[2].state.filter(f => f.state == 2).map(f => f.value).join(",");
+    if (
+      filters[2].state.filter((f) => f.state == 1 || f.state == 2).length > 0
+    ) {
+      const including = filters[2].state
+        .filter((f) => f.state == 1)
+        .map((f) => f.value)
+        .join(",");
+      const excluding = filters[2].state
+        .filter((f) => f.state == 2)
+        .map((f) => f.value)
+        .join(",");
       if (including.length > 0) url += `&gi=${including}`;
       if (excluding.length > 0) url += `&ge=${excluding}`;
     }
 
-    if (filters[3].state.filter(f => f.state == true).length > 0) {
-      const values = filters[3].state.filter(f => f.state == true).map(f => f.value).join(",");
+    if (filters[3].state.filter((f) => f.state == true).length > 0) {
+      const values = filters[3].state
+        .filter((f) => f.state == true)
+        .map((f) => f.value)
+        .join(",");
       url += `&ss=${values}`;
     }
 
@@ -197,65 +216,53 @@ class DefaultExtension extends MProvider {
     const domain = html;
 
     if (domain.includes("anotivereads")) {
-      const title =
-        doc.selectFirst("#comic-nav-name")?.text.trim() ||
-        "";
+      const title = doc.selectFirst("#comic-nav-name")?.text.trim() || "";
       const content = doc.selectFirst("#spliced-comic")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("asuratls")) {
-      const title =
-        doc.selectFirst(".post-body > div > b")?.text.trim() ||
-        "";
-      const content = doc.selectFirst(".post-body")?.innerHtml?.replace(title, "");
+      const title = doc.selectFirst(".post-body > div > b")?.text.trim() || "";
+      const content = doc
+        .selectFirst(".post-body")
+        ?.innerHtml?.replace(title, "");
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("daoist")) {
-      const title =
-        doc.selectFirst(".chapter__title")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".chapter__title")?.text.trim() || "";
       const content = doc.selectFirst(".chapter__content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("darkstartranslations")) {
-      const title =
-        doc.selectFirst("ol.breadcrumb > li")?.text.trim() ||
-        "";
-      const content = doc.selectFirst(".text-left")?.innerHtml?.replace("<br>", "<br><br>");
+      const title = doc.selectFirst("ol.breadcrumb > li")?.text.trim() || "";
+      const content = doc
+        .selectFirst(".text-left")
+        ?.innerHtml?.replace("<br>", "<br><br>");
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("fictionread")) {
-      const title =
-        doc.selectFirst(".title-image > span")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".title-image > span")?.text.trim() || "";
       const content = doc.selectFirst(".content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("helscans")) {
-      const title =
-        doc.selectFirst(".entry-title-main")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".entry-title-main")?.text.trim() || "";
       const content = doc.selectFirst("#readerarea.rdminimal")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("hiraethtranslation")) {
-      const title =
-        doc.selectFirst("li.active")?.text.trim() ||
-        "";
+      const title = doc.selectFirst("li.active")?.text.trim() || "";
       const content = doc.selectFirst(".text-left")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("hostednovel")) {
-      const title =
-        doc.selectFirst("#chapter-title")?.text.trim() ||
-        "";
+      const title = doc.selectFirst("#chapter-title")?.text.trim() || "";
       const content = doc.selectFirst("#chapter-content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
@@ -266,34 +273,30 @@ class DefaultExtension extends MProvider {
     }
 
     if (domain.includes("isotls")) {
-      const title =
-        doc.selectFirst("head > title")?.text.trim() ||
-        "";
+      const title = doc.selectFirst("head > title")?.text.trim() || "";
       const content = doc.selectFirst("main > article")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("mirilu")) {
       const title =
-        doc.selectFirst(".entry-content > p > strong")?.text.trim() ||
-        "";
+        doc.selectFirst(".entry-content > p > strong")?.text.trim() || "";
       const content = doc.selectFirst(".entry-content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("novelplex")) {
-      const title =
-        doc.selectFirst(".halChap--jud")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".halChap--jud")?.text.trim() || "";
       const content = doc.selectFirst(".halChap--kontenInner")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("novelworldtranslations")) {
-      const title =
-        doc.selectFirst(".entry-title")?.text.trim() ||
-        "";
-      const content = doc.selectFirst(".entry-content")?.innerHtml?.replace(/&nbsp;/g, '')?.replace(/\n/g, '<br>');
+      const title = doc.selectFirst(".entry-title")?.text.trim() || "";
+      const content = doc
+        .selectFirst(".entry-content")
+        ?.innerHtml?.replace(/&nbsp;/g, "")
+        ?.replace(/\n/g, "<br>");
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
@@ -303,25 +306,19 @@ class DefaultExtension extends MProvider {
     }
 
     if (domain.includes("sacredtexttranslations")) {
-      const title =
-        doc.selectFirst(".entry-title")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".entry-title")?.text.trim() || "";
       const content = doc.selectFirst(".entry-content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("scribblehub")) {
-      const title =
-        doc.selectFirst(".chapter-title")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".chapter-title")?.text.trim() || "";
       const content = doc.selectFirst(".chp_raw")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("tinytranslation")) {
-      const title =
-        doc.selectFirst(".title-content")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".title-content")?.text.trim() || "";
       const content = doc.selectFirst(".content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
@@ -332,27 +329,27 @@ class DefaultExtension extends MProvider {
     }
 
     if (domain.includes("wattpad")) {
-      const title =
-        doc.selectFirst(".h2")?.text.trim() ||
-        "";
+      const title = doc.selectFirst(".h2")?.text.trim() || "";
       const content = doc.selectFirst(".part-content > pre")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("webnovel")) {
-      const title =
-        doc.selectFirst(".cha-tit > .pr > .dib")?.text.trim() ||
-        "";
-      const content = doc.selectFirst(".cha-words")?.innerHtml || doc.selectFirst("._content")?.innerHtml;
+      const title = doc.selectFirst(".cha-tit > .pr > .dib")?.text.trim() || "";
+      const content =
+        doc.selectFirst(".cha-words")?.innerHtml ||
+        doc.selectFirst("._content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("wetriedtls")) {
-      const content = doc.selectFirst("script:contains(\"p dir=\")")?.innerHtml || doc.selectFirst("script:contains(\"u003c\")")?.innerHtml;
+      const content =
+        doc.selectFirst('script:contains("p dir=")')?.innerHtml ||
+        doc.selectFirst('script:contains("u003c")')?.innerHtml;
       if (content) {
         const jsonString_wetried = content.slice(
-          content.indexOf('.push(') + '.push('.length,
-          content.lastIndexOf(')'),
+          content.indexOf(".push(") + ".push(".length,
+          content.lastIndexOf(")"),
         );
         return `${JSON.parse(jsonString_wetried)[1]}`;
       }
@@ -360,9 +357,7 @@ class DefaultExtension extends MProvider {
     }
 
     if (domain.includes("wuxiaworld")) {
-      const title =
-        doc.selectFirst("h4 > span")?.text.trim() ||
-        "";
+      const title = doc.selectFirst("h4 > span")?.text.trim() || "";
       const content = doc.selectFirst(".chapter-content")?.innerHtml;
       return `<h2>${title}</h2><hr><br>${content}`;
     }
@@ -377,23 +372,30 @@ class DefaultExtension extends MProvider {
     }
 
     if (domain.includes("webnoveltranslations")) {
-        const doc = new Document(html);
-        const title = doc.selectFirst("#chapter-heading")?.text.trim() || "";
-        
-        const content = doc.selectFirst("#novel-chapter-container.text-left")?.innerHtml;
-        return `<h2>${title}</h2><hr><br>${content}`;
+      const doc = new Document(html);
+      const title = doc.selectFirst("#chapter-heading")?.text.trim() || "";
+
+      const content = doc.selectFirst(
+        "#novel-chapter-container.text-left",
+      )?.innerHtml;
+      return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("webnovel")) {
       const title =
-        doc.selectFirst("#page > .chapter_content > .cha-tit > div > div")?.text.trim() ||
-        "";
-      const content = doc.selectFirst("#page > .chapter_content > .cha-content > .cha-words")?.innerHtml.replaceAll(/<i\s*.*?>.*?<\/i>/gm, "");
+        doc
+          .selectFirst("#page > .chapter_content > .cha-tit > div > div")
+          ?.text.trim() || "";
+      const content = doc
+        .selectFirst("#page > .chapter_content > .cha-content > .cha-words")
+        ?.innerHtml.replaceAll(/<i\s*.*?>.*?<\/i>/gm, "");
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     if (domain.includes("re-library")) {
-      const redirectUrl = doc.selectFirst(".entry-content > div > div > p > a").getHref;
+      const redirectUrl = doc.selectFirst(
+        ".entry-content > div > div > p > a",
+      ).getHref;
       const redirectRes = await client.get(redirectUrl, {
         Priority: "u=0, i",
         "User-Agent":
@@ -403,16 +405,23 @@ class DefaultExtension extends MProvider {
       const title =
         redirectDoc.selectFirst(".entry-header > .entry-title")?.text.trim() ||
         "";
-      const content = redirectDoc.selectFirst(".entry-content")?.innerHtml.replaceAll(/<i\s*.*?>.*?<\/i>/gm, "");
+      const content = redirectDoc
+        .selectFirst(".entry-content")
+        ?.innerHtml.replaceAll(/<i\s*.*?>.*?<\/i>/gm, "");
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
     const blogspotElements = [
-      doc.selectFirst("meta[name=\"google-adsense-platform-domain\"]").attr("content"),
-      doc.selectFirst("meta[name=\"generator\"]").attr("content"),
+      doc
+        .selectFirst('meta[name="google-adsense-platform-domain"]')
+        .attr("content"),
+      doc.selectFirst('meta[name="generator"]').attr("content"),
     ];
-    const isBlogspot = blogspotElements.some(e => {
-      return e?.toLowerCase().includes("blogspot") || e?.toLowerCase().includes("blogger")
+    const isBlogspot = blogspotElements.some((e) => {
+      return (
+        e?.toLowerCase().includes("blogspot") ||
+        e?.toLowerCase().includes("blogger")
+      );
     });
 
     if (isBlogspot) {
@@ -429,12 +438,15 @@ class DefaultExtension extends MProvider {
 
     const wordpressElements = [
       doc.selectFirst("#dcl_comments-js-extra")?.innerHtml,
-      doc.selectFirst("meta[name=\"generator\"]")?.attr("content"),
+      doc.selectFirst('meta[name="generator"]')?.attr("content"),
       doc.selectFirst(".powered-by")?.text,
       doc.selectFirst("footer")?.text,
     ];
-    let isWordpress = wordpressElements.some(e => {
-      return e?.toLowerCase().includes("wordpress") || e?.toLowerCase().includes("site kit by google")
+    let isWordpress = wordpressElements.some((e) => {
+      return (
+        e?.toLowerCase().includes("wordpress") ||
+        e?.toLowerCase().includes("site kit by google")
+      );
     });
 
     let title =
@@ -475,7 +487,11 @@ class DefaultExtension extends MProvider {
       doc.selectFirst("#the-content")?.innerHtml ||
       doc.selectFirst("article.post")?.innerHtml;
 
-    if (isWordpress || domain.includes("etherreads") || domain.includes("soafp")) {
+    if (
+      isWordpress ||
+      domain.includes("etherreads") ||
+      domain.includes("soafp")
+    ) {
       return `<h2>${title}</h2><hr><br>${content}`;
     }
 
@@ -818,7 +834,7 @@ class DefaultExtension extends MProvider {
             value: "asc",
           },
         ],
-      }
+      },
     ];
   }
 

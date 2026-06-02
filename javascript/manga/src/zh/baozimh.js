@@ -1,30 +1,35 @@
-const mangayomiSources = [{
-  "name": "包子漫画",
-  "lang": "zh",
-  "baseUrl": "https://www.baozimh.com",
-  "apiUrl": "",
-  "iconUrl": "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/zh.baozimh.png",
-  "typeSource": "single",
-  "itemType": 0,
-  "isNsfw": false,
-  "version": "0.0.1",
-  "dateFormat": "",
-  "dateFormatLocale": "",
-  "pkgName": "manga/src/zh/baozimh.js"
-}];
+const mangayomiSources = [
+  {
+    name: "包子漫画",
+    lang: "zh",
+    baseUrl: "https://www.baozimh.com",
+    apiUrl: "",
+    iconUrl:
+      "https://raw.githubusercontent.com/christianscano/mangayomi-extensions/main/javascript/icon/zh.baozimh.png",
+    typeSource: "single",
+    itemType: 0,
+    isNsfw: false,
+    version: "0.0.1",
+    dateFormat: "",
+    dateFormatLocale: "",
+    pkgName: "manga/src/zh/baozimh.js",
+  },
+];
 
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36";
+const USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36";
 
 class DefaultExtension extends MProvider {
   getHeaders(url) {
     return {
       "User-Agent": USER_AGENT,
-      "Referer": this.source.baseUrl + "/",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      Referer: this.source.baseUrl + "/",
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Accept-Language": "en-US,en;q=0.5",
       "Accept-Encoding": "gzip, deflate, br",
-      "Connection": "keep-alive",
-      "Upgrade-Insecure-Requests": "1"
+      Connection: "keep-alive",
+      "Upgrade-Insecure-Requests": "1",
     };
   }
   extractMangaList(doc) {
@@ -37,12 +42,12 @@ class DefaultExtension extends MProvider {
       mangas.push({
         name: title,
         link: link,
-        imageUrl: image
+        imageUrl: image,
       });
     }
     return {
       list: mangas,
-      hasNextPage: elements.length > 0
+      hasNextPage: elements.length > 0,
     };
   }
 
@@ -79,7 +84,12 @@ class DefaultExtension extends MProvider {
     const desc = doc.selectFirst("p.comics-detail__desc").text;
     const image = doc.selectFirst("amp-img[alt='" + name + "']").attr("src");
     const tag = doc.selectFirst("span.tag").text;
-    const status = (tag === "连载中" || tag === "連載中") ? 0 : (tag === "已完结" || tag === "已完結") ? 1 : 2;
+    const status =
+      tag === "连载中" || tag === "連載中"
+        ? 0
+        : tag === "已完结" || tag === "已完結"
+          ? 1
+          : 2;
     const elements = doc.select("a.comics-chapters__item");
     const chapters = [];
     for (const el of elements) {
@@ -88,7 +98,7 @@ class DefaultExtension extends MProvider {
       if (href) {
         chapters.push({
           name: title,
-          url: this.source.baseUrl + href
+          url: this.source.baseUrl + href,
         });
       }
     }
@@ -98,7 +108,7 @@ class DefaultExtension extends MProvider {
       description: desc,
       author: author,
       status: status,
-      episodes: chapters
+      episodes: chapters,
     };
   }
 

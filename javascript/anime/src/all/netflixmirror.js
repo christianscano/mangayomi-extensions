@@ -1,17 +1,17 @@
 const mangayomiSources = [
   {
-    "name": "NetMirror",
-    "id": 446414301,
-    "lang": "all",
-    "baseUrl": "https://net2025.cc",
-    "apiUrl": "https://net2025.cc",
-    "iconUrl":
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/all.netflixmirror.png",
-    "typeSource": "single",
-    "itemType": 1,
-    "version": "1.0.5",
-    "pkgPath": "anime/src/all/netflixmirror.js"
-  }
+    name: "NetMirror",
+    id: 446414301,
+    lang: "all",
+    baseUrl: "https://net2025.cc",
+    apiUrl: "https://net2025.cc",
+    iconUrl:
+      "https://raw.githubusercontent.com/christianscano/mangayomi-extensions/main/javascript/icon/all.netflixmirror.png",
+    typeSource: "single",
+    itemType: 1,
+    version: "1.0.5",
+    pkgPath: "anime/src/all/netflixmirror.js",
+  },
 ];
 
 class DefaultExtension extends MProvider {
@@ -38,8 +38,8 @@ class DefaultExtension extends MProvider {
 
   getHeaders() {
     return {
-      "referrer": this.getBaseUrl(),
-      "ott": this.getServiceDetails(),
+      referrer: this.getBaseUrl(),
+      ott: this.getServiceDetails(),
       "x-requested-with": "NetmirrorNewTV v1.0",
       "user-agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:136.0) Gecko/20100101 Firefox/136.0 /OS.GatuNewTV v1.0",
@@ -134,14 +134,14 @@ class DefaultExtension extends MProvider {
     const data = await this.request(`/post.php?id=${vidId}`, hdr);
     var ep_poster = data.ep_poster;
     const name = data.title;
-    var genre = []
+    var genre = [];
     data.moredetails.forEach((item) => {
       var key = item.k;
       if (key.includes("Genre")) {
         genre = item.v.split(",").map((g) => g.trim());
       }
     });
-    genre.push(data.ua)
+    genre.push(data.ua);
     const description = data.desc;
     let episodes = [];
 
@@ -157,11 +157,11 @@ class DefaultExtension extends MProvider {
             ep_poster,
             hdr,
             showEpThumbnail,
-            showEpDesc
+            showEpDesc,
           );
           newEpisodes.push(...eps);
           seasonNum++;
-        })
+        }),
       );
       episodes.push(...newEpisodes);
     } else {
@@ -169,7 +169,7 @@ class DefaultExtension extends MProvider {
       episodes.push({
         name: `Movie`,
         url: vidId,
-        duration: data.runtime
+        duration: data.runtime,
       });
     }
 
@@ -189,7 +189,7 @@ class DefaultExtension extends MProvider {
     ep_poster,
     hdr,
     showEpThumbnail,
-    showEpDesc
+    showEpDesc,
   ) {
     var ott = hdr["ott"];
 
@@ -201,14 +201,14 @@ class DefaultExtension extends MProvider {
       try {
         const data = await this.request(
           `/episodes.php?id=${sid}&page=${pg}`,
-          hdr
+          hdr,
         );
 
         data.episodes?.forEach((ep) => {
           var ep_id = ep.id;
           var episodeNum = ep.ep;
           var info = ep.info;
-          var title = ep.t
+          var title = ep.t;
           var name = `S${seasonNum}-E${episodeNum}: ${title}`;
 
           var dateUpload = null;
@@ -264,10 +264,10 @@ class DefaultExtension extends MProvider {
   async getVideoList(url) {
     var headers = await this.getTokenHeader();
 
-    var baseUrl = headers['referrer']
-    var ott = headers['ott']
+    var baseUrl = headers["referrer"];
+    var ott = headers["ott"];
 
-    var streamUrl = `${baseUrl}/newtv/hls/${ott}/${url}.m3u8`
+    var streamUrl = `${baseUrl}/newtv/hls/${ott}/${url}.m3u8`;
 
     let videoList = [];
     let audios = [];

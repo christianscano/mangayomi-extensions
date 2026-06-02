@@ -1,22 +1,23 @@
 const mangayomiSources = [
   {
-    "name": "Annas Archive",
-    "lang": "en",
-    "baseUrl": "https://annas-archive.li",
-    "apiUrl": "",
-    "iconUrl":
-      "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/all.annasarchive.png",
-    "typeSource": "single",
-    "itemType": 2,
-    "version": "0.0.2",
-    "appMinVerReq": "0.6.1",
-    "dateFormat": "",
-    "dateFormatLocale": "",
-    "pkgPath": "novel/src/all/annasarchive.js",
-    "isNsfw": false,
-    "hasCloudflare": true,
-    "notes": "EPUBs are automatically downloaded to view chapters! Downloads from Libgen might be slow!"
-  }
+    name: "Annas Archive",
+    lang: "en",
+    baseUrl: "https://annas-archive.li",
+    apiUrl: "",
+    iconUrl:
+      "https://raw.githubusercontent.com/christianscano/mangayomi-extensions/main/javascript/icon/all.annasarchive.png",
+    typeSource: "single",
+    itemType: 2,
+    version: "0.0.2",
+    appMinVerReq: "0.6.1",
+    dateFormat: "",
+    dateFormatLocale: "",
+    pkgPath: "novel/src/all/annasarchive.js",
+    isNsfw: false,
+    hasCloudflare: true,
+    notes:
+      "EPUBs are automatically downloaded to view chapters! Downloads from Libgen might be slow!",
+  },
 ];
 
 class DefaultExtension extends MProvider {
@@ -79,12 +80,15 @@ class DefaultExtension extends MProvider {
     const doc = new Document(res.body);
     const main = doc.selectFirst('main[class="main"]');
 
-    const name = doc.selectFirst('div.text-3xl.font-bold')?.text.trim();
+    const name = doc.selectFirst("div.text-3xl.font-bold")?.text.trim();
     const description = doc
       .selectFirst('div[class="mb-1"]')
       ?.text.trim()
       .replace("description", "");
-    const author = doc.selectFirst('div[class="italic"]')?.text.replaceAll("🔍", "").trim();
+    const author = doc
+      .selectFirst('div[class="italic"]')
+      ?.text.replaceAll("🔍", "")
+      .trim();
     const status = 1;
     const genre = [];
 
@@ -135,19 +139,30 @@ class DefaultExtension extends MProvider {
       ...this.headers,
     });
     const doc = new Document(res.body);
-    const links = doc.select(
-      "a"
-    );
-    const libgenRs = links.find((el) => el.getHref?.includes("books.ms"))?.getHref;
-    const libgenLi = links.find((el) => el.getHref?.includes("libgen.li"))?.getHref;
-    if (libgenRs && (await client.head(libgenRs, this.headers)).statusCode === 200) {
+    const links = doc.select("a");
+    const libgenRs = links.find((el) =>
+      el.getHref?.includes("books.ms"),
+    )?.getHref;
+    const libgenLi = links.find((el) =>
+      el.getHref?.includes("libgen.li"),
+    )?.getHref;
+    if (
+      libgenRs &&
+      (await client.head(libgenRs, this.headers)).statusCode === 200
+    ) {
       const response = await client.get(libgenRs, this.headers);
       const document = new Document(response.body);
-      return document.selectFirst('div#download > h2 > a')?.getHref;
-    } else if (libgenLi && (await client.head(libgenLi, this.headers)).statusCode === 200) {
+      return document.selectFirst("div#download > h2 > a")?.getHref;
+    } else if (
+      libgenLi &&
+      (await client.head(libgenLi, this.headers)).statusCode === 200
+    ) {
       const response = await client.get(libgenLi, this.headers);
       const document = new Document(response.body);
-      return "https://libgen.li/" + document.selectFirst('tbody > tr > td > a')?.getHref;
+      return (
+        "https://libgen.li/" +
+        document.selectFirst("tbody > tr > td > a")?.getHref
+      );
     }
     return null;
   }
@@ -157,10 +172,15 @@ class DefaultExtension extends MProvider {
     const client = await new Client();
     const bookLink = await this._getMirrorLink(client, urls[0]);
 
-    return await parseEpubChapter(name, bookLink, {
-      Connection: "Keep-Alive",
-      ...this.headers,
-    }, urls[1]);
+    return await parseEpubChapter(
+      name,
+      bookLink,
+      {
+        Connection: "Keep-Alive",
+        ...this.headers,
+      },
+      urls[1],
+    );
   }
 
   async cleanHtmlContent(html) {

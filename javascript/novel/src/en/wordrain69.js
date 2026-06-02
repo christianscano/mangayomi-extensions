@@ -1,19 +1,21 @@
-const mangayomiSources = [{
-  "name": "Wordrain69",
-  "lang": "en",
-  "baseUrl": "https://wordrain69.com",
-  "apiUrl": "",
-  "iconUrl":
-    "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/en.wordrain69.png",
-  "typeSource": "single",
-  "itemType": 2,
-  "version": "0.0.4",
-  "dateFormat": "",
-  "dateFormatLocale": "",
-  "pkgPath": "novel/src/en/wordrain69.js",
-  "isNsfw": false,
-  "hasCloudflare": false
-}];
+const mangayomiSources = [
+  {
+    name: "Wordrain69",
+    lang: "en",
+    baseUrl: "https://wordrain69.com",
+    apiUrl: "",
+    iconUrl:
+      "https://raw.githubusercontent.com/christianscano/mangayomi-extensions/main/javascript/icon/en.wordrain69.png",
+    typeSource: "single",
+    itemType: 2,
+    version: "0.0.4",
+    dateFormat: "",
+    dateFormatLocale: "",
+    pkgPath: "novel/src/en/wordrain69.js",
+    isNsfw: false,
+    hasCloudflare: false,
+  },
+];
 
 class DefaultExtension extends MProvider {
   getHeaders(url) {
@@ -31,7 +33,8 @@ class DefaultExtension extends MProvider {
       list.push({ name, imageUrl, link });
     }
     const hasNextPage =
-      doc.selectFirst("nav > div.nav-links > a").text?.includes("Posts") ?? false;
+      doc.selectFirst("nav > div.nav-links > a").text?.includes("Posts") ??
+      false;
     return { list: list, hasNextPage };
   }
 
@@ -68,12 +71,25 @@ class DefaultExtension extends MProvider {
     const res = await client.get(url);
     const doc = new Document(res.body);
     const imageUrl = doc.selectFirst("div.summary_image > a > img")?.getSrc;
-    const description = doc.select("div.summary__content > p > span").map((el) => el.text).join(" ");
+    const description = doc
+      .select("div.summary__content > p > span")
+      .map((el) => el.text)
+      .join(" ");
     const author = doc.selectFirst("div.author-content > a")?.text.trim();
     const artist = doc.selectFirst("div.artist-content > a")?.text.trim();
-    const status = this.toStatus(doc.selectFirst("div.post-status > div.post-content_item > div.summary-content")?.text.trim());
-    const tags = doc.select("div.summary-content > div.tags-content > a").map((el) => el.text.trim());
-    let genre = doc.select("div.summary-content > div.genres-content > a").map((el) => el.text.trim());
+    const status = this.toStatus(
+      doc
+        .selectFirst(
+          "div.post-status > div.post-content_item > div.summary-content",
+        )
+        ?.text.trim(),
+    );
+    const tags = doc
+      .select("div.summary-content > div.tags-content > a")
+      .map((el) => el.text.trim());
+    let genre = doc
+      .select("div.summary-content > div.genres-content > a")
+      .map((el) => el.text.trim());
     if (tags.length != 0) {
       genre.push(tags);
     }
@@ -81,8 +97,8 @@ class DefaultExtension extends MProvider {
     const chapters = [];
     const chapterRes = await client.post(`${url}ajax/chapters/`, {
       Priority: "u=0, i",
-      "Origin": this.source.baseUrl,
-      "Referer": url,
+      Origin: this.source.baseUrl,
+      Referer: url,
     });
     const chapterDoc = new Document(chapterRes.body);
 
@@ -92,7 +108,9 @@ class DefaultExtension extends MProvider {
       const chapterUrl = el.selectFirst("a").getHref;
       let dateUpload;
       try {
-        dateUpload = this.parseDate(el.selectFirst("span.chapter-release-date > i")?.text.trim());
+        dateUpload = this.parseDate(
+          el.selectFirst("span.chapter-release-date > i")?.text.trim(),
+        );
       } catch (_) {
         dateUpload = null;
       }
@@ -123,9 +141,7 @@ class DefaultExtension extends MProvider {
 
   async cleanHtmlContent(html) {
     const doc = new Document(html);
-    const title =
-      doc.selectFirst("#chapter-heading")?.text.trim() ||
-      "";
+    const title = doc.selectFirst("#chapter-heading")?.text.trim() || "";
     const content = doc.selectFirst(".entry-content")?.innerHtml;
     return `<h2>${title}</h2><hr><br>${content}`;
   }
@@ -140,13 +156,23 @@ class DefaultExtension extends MProvider {
 
   parseDate(date) {
     const months = {
-      "January": "01", "February": "02", "March": "03", "April": "04", "May": "05", "June": "06",
-      "July": "07", "August": "08", "September": "09", "October": "10", "November": "11", "December": "12"
+      January: "01",
+      February: "02",
+      March: "03",
+      April: "04",
+      May: "05",
+      June: "06",
+      July: "07",
+      August: "08",
+      September: "09",
+      October: "10",
+      November: "11",
+      December: "12",
     };
     date = date.toLowerCase().replace(",", "").split(" ");
 
     if (!(date[0] in months)) {
-      return String(new Date().valueOf())
+      return String(new Date().valueOf());
     }
 
     date[0] = months[date[0]];
