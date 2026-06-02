@@ -23,6 +23,7 @@ import 'src/fr/otakufr/source.dart';
 import 'src/id/nimegami/source.dart';
 import 'src/id/oploverz/source.dart';
 import 'src/id/otakudesu/source.dart';
+import 'src/it/animeworld/source.dart';
 import 'src/it/animesaturn/source.dart';
 import 'src/pt/animesvision/source.dart';
 import 'src/sq/filma24/source.dart';
@@ -40,6 +41,7 @@ List<Source> dartAnimesourceList = [
   nimegami,
   oploverz,
   ...dopeflixSourcesList,
+  animeworld,
   animesaturn,
   uhdmoviesSource,
   ...datalifeengineSourcesList,
