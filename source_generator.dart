@@ -74,14 +74,11 @@ List<Source> _searchJsSources(Directory dir) {
         if (entity is Directory) {
           sourceList.addAll(_searchJsSources(entity));
         } else if (entity is File && entity.path.endsWith('.js')) {
-          final regex = RegExp(
-            r'const\s+mangayomiSources\s*=\s*(\[.*?\]);',
-            dotAll: true,
-          );
           final defaultSource = Source();
-          final match = regex.firstMatch(entity.readAsStringSync());
+          final match = _jsSourceListPattern.firstMatch(entity.readAsStringSync());
           if (match != null) {
-            for (var sourceJson in jsonDecode(match.group(1)!) as List) {
+            for (var sourceJson
+                in _parseJsSourceList(match.group(1)!, entity.path)) {
               final langs = sourceJson["langs"] as List?;
               Source source = Source.fromJson(sourceJson)
                 ..sourceCodeLanguage = 1
@@ -113,4 +110,31 @@ List<Source> _searchJsSources(Directory dir) {
     }
   }
   return sourceList;
+}
+
+final _jsSourceListPattern = RegExp(
+  r'const\s+mangayomiSources\s*=\s*(\[.*?\]);',
+  dotAll: true,
+);
+
+List<Map<String, dynamic>> _parseJsSourceList(String sourceListText, String path) {
+  try {
+    final normalized = _normalizeJsSourceListToJson(sourceListText);
+    return List<Map<String, dynamic>>.from(jsonDecode(normalized) as List);
+  } on FormatException catch (error) {
+    throw FormatException('Failed to parse mangayomiSources in $path: $error');
+  }
+}
+
+String _normalizeJsSourceListToJson(String sourceListText) {
+  return sourceListText
+      // JS metadata files often use object-literal keys instead of JSON keys.
+      .replaceAllMapped(
+        RegExp(r'([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*:)'),
+        (match) => '${match.group(1)}"${match.group(2)}"${match.group(3)}',
+      )
+      .replaceAllMapped(
+        RegExp(r',\s*([}\]])'),
+        (match) => match.group(1)!,
+      );
 }
