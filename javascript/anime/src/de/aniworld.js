@@ -1,20 +1,17 @@
-const mangayomiSources = [
-  {
-    name: "AniWorld",
-    lang: "de",
-    baseUrl: "https://aniworld.to",
-    apiUrl: "",
-    iconUrl:
-      "https://raw.githubusercontent.com/christianscano/mangayomi-extensions/main/javascript/icon/de.aniworld.png",
-    typeSource: "single",
-    itemType: 1,
-    isNsfw: false,
-    version: "0.3.8",
-    dateFormat: "",
-    dateFormatLocale: "",
-    pkgPath: "anime/src/de/aniworld.js",
-  },
-];
+const mangayomiSources = [{
+    "name": "AniWorld",
+    "lang": "de",
+    "baseUrl": "https://aniworld.to",
+    "apiUrl": "",
+    "iconUrl": "https://raw.githubusercontent.com/m2k3a/mangayomi-extensions/main/javascript/icon/de.aniworld.png",
+    "typeSource": "single",
+    "itemType": 1,
+    "isNsfw": false,
+    "version": "0.4.0",
+    "dateFormat": "",
+    "dateFormatLocale": "",
+    "pkgPath": "anime/src/de/aniworld.js"
+}];
 
 class DefaultExtension extends MProvider {
   constructor() {
@@ -110,82 +107,68 @@ class DefaultExtension extends MProvider {
       const p = Promise.resolve().then(() => iteratorFn(item));
       ret.push(p);
 
-      // When poolLimit is reached, wait for the fastest promise to complete
-      if (poolLimit <= array.length) {
-        const e = p.then(() => {
-          // Remove the promise from executing array once it resolves
-          executing.splice(executing.indexOf(e), 1);
-        });
-        executing.push(e);
-        if (executing.length >= poolLimit) {
-          await Promise.race(executing);
+            // When poolLimit is reached, wait for the fastest promise to complete
+            if (poolLimit <= array.length) {
+                const e = p.then(() => {
+                    // Remove the promise from executing array once it resolves
+                    executing.splice(executing.indexOf(e), 1);
+                });
+                executing.push(e);
+                if (executing.length >= poolLimit) {
+                    await Promise.race(executing);
+                }
+            }
         }
-      }
+        return Promise.all(ret);
     }
-    return Promise.all(ret);
-  }
-  async getDetail(url) {
-    const baseUrl = this.source.baseUrl;
-    const res = await this.client.get(baseUrl + url);
-    const document = new Document(res.body);
-    const imageUrl =
-      baseUrl + document.selectFirst("div.seriesCoverBox img").attr("data-src");
-    const name = document.selectFirst("div.series-title h1 span").text;
-    const genre = document
-      .select("div.genres ul li")
-      .map((e) => e.text)
-      .filter((text) => !/^\+\s\d+$/.test(text));
-    const description = this.cleanHtmlString(
-      document.selectFirst("p.seri_des").attr("data-full-description"),
-    );
-    const produzent = document
-      .select("div.cast li")
-      .filter((e) => e.outerHtml.includes("Produzent:"));
-    let author = "";
-    if (produzent.length > 0) {
-      author = produzent[0]
-        .select("li")
-        .map((e) => e.text)
-        .filter((text) => !/^\s\&\s\d+\sweitere$/.test(text))
-        .join(", ");
+    async getDetail(url) {
+        const baseUrl = this.source.baseUrl;
+        const res = await this.client.get(baseUrl + url);
+        const document = new Document(res.body);
+        const imageUrl = baseUrl +
+            document.selectFirst("div.seriesCoverBox img").attr("data-src");
+        const name = document.selectFirst("div.series-title h1 span").text;
+        const genre = document.select("div.genres ul li").map(e => e.text).filter(text => !/^\+\s\d+$/.test(text));
+        const description = this.cleanHtmlString(document.selectFirst("p.seri_des").attr("data-full-description"));
+        const produzent = document.select("div.cast li")
+            .filter(e => e.outerHtml.includes("Produzent:"));
+        let author = "";
+        if (produzent.length > 0) {
+            author = produzent[0]
+                .select("li")
+                .map((e) => e.text)
+                .filter((text) => !/^\s\&\s\d+\sweitere$/.test(text))
+                .join(", ");
+        }
+        const seasonsElements = document.select("#stream > ul:nth-child(1) > li > a");
+        // Use asyncPool to limit concurrency while processing seasons
+        const episodesArrays = await this.asyncPool(2, seasonsElements, element => this.parseEpisodesFromSeries(element));
+        // Flatten the resulting arrays and reverse the order
+        const episodes = episodesArrays.flat().reverse();
+        return { name, imageUrl, description, author, status: 5, genre, episodes };
     }
-    const seasonsElements = document.select(
-      "#stream > ul:nth-child(1) > li > a",
-    );
-    // Use asyncPool to limit concurrency while processing seasons
-    const episodesArrays = await this.asyncPool(2, seasonsElements, (element) =>
-      this.parseEpisodesFromSeries(element),
-    );
-    // Flatten the resulting arrays and reverse the order
-    const episodes = episodesArrays.flat().reverse();
-    return { name, imageUrl, description, author, status: 5, genre, episodes };
-  }
-  async parseEpisodesFromSeries(element) {
-    const seasonId = element.getHref;
-    const res = await this.client.get(this.source.baseUrl + seasonId);
-    const episodeElements = new Document(res.body).select(
-      "table.seasonEpisodesList tbody tr",
-    );
-    // Use asyncPool to limit concurrency while processing episodes of a season
-    return await this.asyncPool(13, episodeElements, (e) =>
-      this.episodeFromElement(e),
-    );
-  }
-  async episodeFromElement(element) {
-    const titleAnchor = element.selectFirst("td.seasonEpisodeTitle a");
-    const episodeSpan = titleAnchor.selectFirst("span");
-    const url = titleAnchor.attr("href");
-    const episodeSeasonId = element.attr("data-episode-season-id");
-    let episode = this.cleanHtmlString(episodeSpan.text);
-    let name = "";
-    if (url.includes("/film")) {
-      name = `Film ${episodeSeasonId} : ${episode}`;
-    } else {
-      const seasonMatch = url.match(/staffel-(\d+)\/episode/);
-      name = `Staffel ${seasonMatch[1]} Folge ${episodeSeasonId} : ${episode}`;
+    async parseEpisodesFromSeries(element) {
+        const seasonId = element.getHref;
+        const res = await this.client.get(this.source.baseUrl + seasonId);
+        const episodeElements = new Document(res.body).select("table.seasonEpisodesList tbody tr");
+        // Use asyncPool to limit concurrency while processing episodes of a season
+        return await this.asyncPool(13, episodeElements, e => this.episodeFromElement(e));
     }
-    return name && url ? { name, url } : {};
-  }
+    async episodeFromElement(element) {
+        const titleAnchor = element.selectFirst("td.seasonEpisodeTitle a");
+        const episodeSpan = titleAnchor.selectFirst("span");
+        const url = titleAnchor.attr("href");
+        const episodeSeasonId = element.attr("data-episode-season-id");
+        let episode = this.cleanHtmlString(episodeSpan.text);
+        let name = "";
+        if (url.includes("/film")) {
+            name = `Film ${episodeSeasonId} : ${episode}`;
+        } else {
+            const seasonMatch = url.match(/staffel-(\d+)\/episode/);
+            name = `Staffel ${seasonMatch[1]} Folge ${episodeSeasonId} : ${episode}`;
+        }
+        return name && url ? { name, url } : {};
+    }
 
   async getVideoList(url) {
     const baseUrl = this.source.baseUrl;
@@ -216,47 +199,36 @@ class DefaultExtension extends MProvider {
       const type = langkey == 1 ? "Dub" : "Sub";
       const host = element.selectFirst("a h4").text;
 
-      if (hostFilter.includes(host) && langFilter.includes(`${lang} ${type}`)) {
-        const redirect =
-          baseUrl + element.selectFirst("a.watchEpisode").attr("href");
-        promises.push(
-          (async (redirect, lang, type, host) => {
-            const location = (await dartClient.get(redirect)).headers.location;
-            return await extractAny(
-              location,
-              host.toLowerCase(),
-              lang,
-              type,
-              host,
-              { Referer: this.source.baseUrl },
-            );
-          })(redirect, lang, type, host),
-        );
-      }
+            if (hostFilter.includes(host) && langFilter.includes(`${lang} ${type}`)) {
+                const redirect = baseUrl + element.selectFirst("a.watchEpisode").attr("href");
+                promises.push((async (redirect, lang, type, host) => {
+                    const redirectRes = await dartClient.get(redirect, { "Referer": baseUrl + url });
+                    let location = redirectRes.headers?.location || redirectRes.headers?.Location;
+                    if (Array.isArray(location)) location = location[0];
+                    if (!location) {
+                        const match = redirectRes.body?.match(/window\.location(?:\.href)?\s*=\s*["']([^"']+)["']/i)
+                            || redirectRes.body?.match(/<meta\s+http-equiv=["']refresh["']\s+content=["']\d+;\s*url=([^"']+)["']/i);
+                        if (match) location = match[1];
+                    }
+                    if (!location) return [];
+                    return await extractAny(location, host.toLowerCase(), lang, type, host, { 'Referer': this.source.baseUrl });
+                })(redirect, lang, type, host));
+            }
+        }
+        for (const p of (await Promise.allSettled(promises))) {
+            if (p.status == 'fulfilled') {
+                videos.push.apply(videos, p.value);
+            }
+        }
+        return sortVideos(videos);
     }
-    for (const p of await Promise.allSettled(promises)) {
-      if (p.status == "fulfilled") {
-        videos.push.apply(videos, p.value);
-      }
-    }
-    return sortVideos(videos);
-  }
-  getSourcePreferences() {
-    const languages = ["Deutsch", "Englisch"];
-    const languageValues = ["Deutscher", "Englischer"];
-    const types = ["Dub", "Sub"];
-    const resolutions = ["1080p", "720p", "480p"];
-    const hosts = [
-      "Doodstream",
-      "Filemoon",
-      "Luluvdo",
-      "SpeedFiles",
-      "Streamtape",
-      "Vidmoly",
-      "Vidoza",
-      "VOE",
-    ];
-    const languageFilters = [];
+    getSourcePreferences() {
+        const languages = ['Deutsch', 'Englisch'];
+        const languageValues = ['Deutscher', 'Englischer'];
+        const types = ['Dub', 'Sub'];
+        const resolutions = ['1080p', '720p', '480p'];
+        const hosts = ['Doodstream', 'Filemoon', 'Luluvdo', 'SpeedFiles', 'Streamtape', 'Vidmoly', 'Vidoza', 'VOE'];
+        const languageFilters = [];
 
     for (const lang of languageValues) {
       for (const type of types) {
@@ -639,12 +611,97 @@ streamWishExtractor = async (url) => {
   });
 };
 
-_voeExtractor = voeExtractor;
 voeExtractor = async (url) => {
-  return (await _voeExtractor(url, "")).map((v) => {
-    v.quality = v.quality.replace(/Voe: (\d+p?)/i, "$1");
-    return v;
-  });
+    function _decodeVoeConfig(encoded) {
+        try {
+            // Step 1: ROT13
+            let s = "";
+            for (let i = 0; i < encoded.length; i++) {
+                const c = encoded.charCodeAt(i);
+                if (c >= 65 && c <= 90) s += String.fromCharCode((c - 65 + 13) % 26 + 65);
+                else if (c >= 97 && c <= 122) s += String.fromCharCode((c - 97 + 13) % 26 + 97);
+                else s += encoded[i];
+            }
+            // Step 2+3: replace delimiters with "_", then remove all "_"
+            for (const d of ["@$", "^^", "~@", "%?", "*~", "!!", "#&"]) {
+                s = s.split(d).join("_");
+            }
+            s = s.split("_").join("");
+            // Step 4: base64 decode -> raw byte string
+            const b4 = Uint8Array.fromBase64(s);
+            let raw = "";
+            for (let i = 0; i < b4.length; i++) raw += String.fromCharCode(b4[i]);
+            // Step 5: subtract 3 from each charCode
+            let sub = "";
+            for (let i = 0; i < raw.length; i++) sub += String.fromCharCode(raw.charCodeAt(i) - 3);
+            // Step 6: reverse
+            const rev = sub.split("").reverse().join("");
+            // Step 7: base64 decode -> JSON
+            return JSON.parse(Uint8Array.fromBase64(rev).decode());
+        } catch (_) {
+            return null;
+        }
+    }
+
+    try {
+        const client = new Client({ "useDartHttpClient": true, "followRedirects": true });
+        let res = await client.get(url, {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0"
+        });
+        let body = res.body;
+
+        const jsRedir = body.match(/window\.location\.(?:href|replace)\s*=\s*['"]([^'"]{10,})['"]/);
+        if (jsRedir) {
+            res = await client.get(jsRedir[1], {
+                "Referer": url,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0"
+            });
+            body = res.body;
+        }
+
+        const directHls = body.match(/(?:let|const|var)\s+hls\s*=\s*['"]([^'"]+)['"]/i)
+            || body.match(/['"]hls['"]\s*:\s*['"]([^'"]+)['"]/i);
+        if (directHls) {
+            const hlsUrl = directHls[1];
+            const vids = await m3u8Extractor(hlsUrl, { "Referer": url });
+            if (vids && vids.length > 0) return vids;
+        }
+
+        const tagIdx = body.indexOf("type=\"application/json\"");
+        if (tagIdx !== -1) {
+            const arrStart = body.indexOf("[", tagIdx);
+            const tagEnd = body.indexOf("</script>", tagIdx);
+            if (arrStart !== -1 && tagEnd !== -1 && arrStart < tagEnd) {
+                const arr = JSON.parse(body.substring(arrStart, tagEnd).trim());
+                if (Array.isArray(arr) && typeof arr[0] === "string") {
+                    const cfg = _decodeVoeConfig(arr[0]);
+                    if (cfg) {
+                        const m3u8 = cfg.source || cfg.m3u8;
+                        const mp4 = cfg.direct_access_url || cfg.mp4;
+                        const list = [];
+                        if (m3u8) {
+                            const origin = (jsRedir ? jsRedir[1] : url).match(/https?:\/\/[^/]+/)?.[0] || "";
+                            const vids = await m3u8Extractor(m3u8, { "Referer": origin ? origin + "/" : url });
+                            if (vids && vids.length > 0) list.push(...vids);
+                        }
+                        if (mp4) {
+                            list.push({
+                                url: mp4,
+                                originalUrl: mp4,
+                                quality: "VOE MP4",
+                                headers: null
+                            });
+                        }
+                        if (list.length > 0) return list;
+                    }
+                }
+            }
+        }
+
+        const m = body.match(/['"](https?:\/\/[^'"]+\.m3u8[^'"]*)['"]/);
+        if (m) return await m3u8Extractor(m[1], null);
+    } catch (e) { }
+    return [];
 };
 
 _mp4UploadExtractor = mp4UploadExtractor;
@@ -704,24 +761,24 @@ async function extractAny(url, method, lang, type, host, headers = null) {
 }
 
 extractAny.methods = {
-  amazon: amazonExtractor,
-  burstcloud: burstcloudExtractor,
-  doodstream: doodExtractor,
-  filemoon: filemoonExtractor,
-  luluvdo: luluvdoExtractor,
-  mixdrop: mixdropExtractor,
-  mp4upload: mp4UploadExtractor,
-  okru: okruExtractor,
-  sendvid: sendVidExtractor,
-  speedfiles: speedfilesExtractor,
-  streamtape: streamTapeExtractor,
-  streamwish: vidHideExtractor,
-  vidguard: vidGuardExtractor,
-  vidhide: vidHideExtractor,
-  vidmoly: vidmolyExtractor,
-  vidoza: vidozaExtractor,
-  voe: voeExtractor,
-  yourupload: yourUploadExtractor,
+    'amazon': amazonExtractor,
+    'burstcloud': burstcloudExtractor,
+    'doodstream': doodExtractor,
+    'filemoon': filemoonExtractor,
+    'luluvdo': luluvdoExtractor,
+    'mixdrop': mixdropExtractor,
+    'mp4upload': mp4UploadExtractor,
+    'okru': okruExtractor,
+    'sendvid': sendVidExtractor,
+    'speedfiles': speedfilesExtractor,
+    'streamtape': streamTapeExtractor,
+    'streamwish': streamWishExtractor,
+    'vidguard': vidGuardExtractor,
+    'vidhide': vidHideExtractor,
+    'vidmoly': vidmolyExtractor,
+    'vidoza': vidozaExtractor,
+    'voe': voeExtractor,
+    'yourupload': yourUploadExtractor
 };
 
 //--------------------------------------------------------------------------------------------------

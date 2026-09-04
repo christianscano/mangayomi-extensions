@@ -1,7 +1,7 @@
 import '../../../../../model/source.dart';
 
 Source get aniwatchtvSource => _aniwatchtvSource;
-const _aniwatchtvVersion = "0.0.2";
+const _aniwatchtvVersion = "0.0.3";
 const _aniwatchtvSourceCodeUrl =
     "https://raw.githubusercontent.com/christianscano/mangayomi-extensions/$branchName/dart/anime/src/en/aniwatchtv/aniwatchtv.dart";
 Source _aniwatchtvSource = Source(
